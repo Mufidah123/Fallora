@@ -52,11 +52,11 @@ export default function AuthLayoutWrapper({
             <main className="relative z-10 w-full max-w-[460px] md:max-w-[500px] rounded-2xl bg-[var(--color-primary)] px-6 py-6 md:px-9 md:py-7 shadow-[0_12px_28px_rgba(41,37,36,0.32)] text-white">
                 <div className="flex items-start justify-between gap-3">
                     <Link href="/" className="flex items-center gap-2.5 group">
-                        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[var(--color-cream)]">
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
                             <img
                                 src="/assets/logo-fallora.png"
                                 alt="Logo Fallora"
-                                className="h-full w-full object-contain p-1"
+                                className="h-full w-full object-contain"
                             />
                         </div>
 
