@@ -38,8 +38,8 @@ export async function POST(request) {
 
         const insertResult = await query(
             `INSERT INTO users (name, username, email, phone, password_hash, role, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, name, username, email, phone, role, status, created_at`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, name, username, email, phone, role, status, created_at`,
             [name, rawUsername, rawEmail, phone, passwordHash, requestedRole, status]
         );
 
@@ -49,8 +49,8 @@ export async function POST(request) {
         if (createdUser.role === "BUYER" && createdUser.status === "ACTIVE") {
             await query(
                 `INSERT INTO carts (buyer_id)
-         VALUES ($1)
-         ON CONFLICT (buyer_id) DO NOTHING`,
+            VALUES ($1)
+            ON CONFLICT (buyer_id) DO NOTHING`,
                 [createdUser.id]
             );
         }

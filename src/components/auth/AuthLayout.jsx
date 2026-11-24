@@ -46,7 +46,7 @@ export default function AuthLayoutWrapper({
                 aria-hidden="true"
                 className="pointer-events-none select-none fixed inset-0 z-[4] overflow-hidden opacity-85"
             >
-                <FallingLeaves count={14} minSize={12} maxSize={22} />
+                <FallingLeaves count={14} minSize={22} maxSize={32} />
             </div>
 
             <main className="relative z-10 w-full max-w-[460px] md:max-w-[500px] rounded-2xl bg-[var(--color-primary)] px-6 py-6 md:px-9 md:py-7 shadow-[0_12px_28px_rgba(41,37,36,0.32)] text-white">

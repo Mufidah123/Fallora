@@ -17,9 +17,9 @@ export async function POST(request) {
 
         const result = await query(
             `SELECT id, name, username, email, phone, password_hash, role, status, rejection_reason
-       FROM users
-       WHERE LOWER(email) = $1 OR LOWER(username) = $1
-       LIMIT 1`,
+        FROM users
+        WHERE LOWER(email) = $1 OR LOWER(username) = $1
+        LIMIT 1`,
             [identifier]
         );
 

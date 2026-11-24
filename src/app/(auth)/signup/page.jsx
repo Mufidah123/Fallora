@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthLayoutWrapper from "@/components/auth/AuthLayout";
 
 export default function SignupPage() {
+    const router = useRouter();
     const [isCompactScreen, setIsCompactScreen] = useState(false);
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -45,6 +48,7 @@ export default function SignupPage() {
             setErrorMsg("Nama lengkap dan username wajib diisi.");
             return;
         }
+        setErrorMsg("");
         setStep(2);
     };
 
@@ -60,6 +64,36 @@ export default function SignupPage() {
         if (formData.password !== formData.confirmPassword) {
             setErrorMsg("Konfirmasi password tidak cocok.");
             return;
+        }
+        setErrorMsg("");
+        setIsSubmitting(true);
+
+        try {
+            const res = await fetch("/api/auth/signup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: formData.name.trim(),
+                    phone: formData.phone.trim(),
+                    username: formData.username.trim(),
+                    email: formData.email.trim(),
+                    password: formData.password,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                setErrorMsg(data.message || "Pendaftaran gagal. Coba periksa kembali data kamu.");
+                return;
+            }
+            router.push(data.redirectTo || "/");
+            router.refresh();
+        } catch {
+            setErrorMsg("Terjadi gangguan jaringan saat mendaftar.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -313,9 +347,10 @@ export default function SignupPage() {
                         <>
                             <button
                                 type="submit"
+                                disabled={isSubmitting}
                                 className="w-full rounded-lg bg-gradient-to-r from-[var(--color-accent)] via-[#D9822B] to-[var(--color-peach)] py-3 text-sm sm:text-base font-bold tracking-wider text-white shadow-md hover:brightness-105 active:scale-[0.99] transition cursor-pointer"
                             >
-                                SIGN UP
+                                {isSubmitting ? "PROCESSING..." : "SIGN UP"}
                             </button>
                             {isMultiStepActive && step === 2 && (
                                 <button

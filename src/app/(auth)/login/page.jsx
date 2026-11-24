@@ -1,17 +1,68 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthLayoutWrapper from "@/components/auth/AuthLayout";
 
 export default function LoginPage() {
+    const router = useRouter();
     const [identifier, setIdentifier] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({
+        identifier: "",
+        password: "",
+        general: "",
+    });
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: Sambungkan ke endpoint /api/auth/login
+        setFieldErrors({ identifier: "", password: "", general: "" });
+        setIsSubmitting(true);
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    identifier,
+                    password,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                const msg = data.message || "Email/Username atau password salah.";
+                if (data.field === "password" || msg.toLowerCase().includes("password")) {
+                    setFieldErrors((prev) => ({ ...prev, password: msg }));
+                } else if (
+                    data.field === "identifier" ||
+                    msg.toLowerCase().includes("email") ||
+                    msg.toLowerCase().includes("username") ||
+                    msg.toLowerCase().includes("pengguna")
+                ) {
+                    setFieldErrors((prev) => ({ ...prev, identifier: msg }));
+                } else {
+                    setFieldErrors((prev) => ({ ...prev, general: msg }));
+                }
+                return;
+            }
+
+            router.push(data.redirectTo || "/");
+            router.refresh();
+        } catch {
+            setFieldErrors((prev) => ({
+                ...prev,
+                general: "Terjadi gangguan jaringan saat mencoba masuk.",
+            }));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -27,6 +78,11 @@ export default function LoginPage() {
                 <div className="mx-auto mt-2.5 h-[2px] w-12 bg-white/90 rounded-full" />
             </div>
 
+            {fieldErrors.general && (
+                <div className="mt-4 rounded-lg border border-red-300 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700">
+                    {fieldErrors.general}
+                </div>
+            )}
             <form onSubmit={handleSubmit} className="mt-7 space-y-5">
                 <div>
                     <label
@@ -48,11 +104,22 @@ export default function LoginPage() {
                             required
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
+                            // onChange={(e) => {
+                            //     setIdentifier(e.target.value);
+                            //     if (fieldErrors.identifier || fieldErrors.general) {
+                            //         setFieldErrors((prev) => ({ ...prev, identifier: "", general: "" }));
+                            //     }
+                            // }}
                             placeholder="hello@example.com"
                             className="w-full rounded-lg border border-white/25 bg-[#A45C2E]/85 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/75 focus:border-[var(--color-peach)] focus:outline-none focus:ring-2 focus:ring-[var(--color-peach)]/40 transition"
                         />
                     </div>
                 </div>
+                {fieldErrors.identifier && (
+                    <p className="mt-1.5 text-xs font-medium text-red-200">
+                        {fieldErrors.identifier}
+                    </p>
+                )}
 
                 <div>
                     <label
@@ -73,6 +140,12 @@ export default function LoginPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            // onChange={(e) => {
+                            //     setIdentifier(e.target.value);
+                            //     if (fieldErrors.identifier || fieldErrors.general) {
+                            //         setFieldErrors((prev) => ({ ...prev, identifier: "", general: "" }));
+                            //     }
+                            // }}
                             placeholder="••••••••••••"
                             className="w-full rounded-lg border border-white/25 bg-[#A45C2E]/85 py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-white/75 focus:border-[var(--color-peach)] focus:outline-none focus:ring-2 focus:ring-[var(--color-peach)]/40 transition"
                         />
@@ -95,6 +168,11 @@ export default function LoginPage() {
                             )}
                         </button>
                     </div>
+                    {fieldErrors.password && (
+                        <p className="mt-1.5 text-xs font-medium text-red-200">
+                            {fieldErrors.password}
+                        </p>
+                    )}
 
                     <div className="mt-1.5 text-right">
                         <Link
@@ -108,9 +186,10 @@ export default function LoginPage() {
 
                 <button
                     type="submit"
+                    disabled={isSubmitting}
                     className="mt-2 w-full rounded-lg bg-gradient-to-r from-[var(--color-accent)] via-[#D9822B] to-[var(--color-peach)] py-3 text-sm sm:text-base font-bold tracking-wider text-white shadow-md hover:brightness-105 active:scale-[0.99] transition cursor-pointer"
                 >
-                    LOGIN
+                    {isSubmitting ? "PROCESSING LOGIN..." : "LOGIN"}
                 </button>
             </form>
 
