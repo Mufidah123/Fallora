@@ -251,3 +251,129 @@ ON addresses(buyer_id);
 
 -- SELECT table_name FROM information_schema.tables
 -- WHERE table_schema = 'public';
+
+-- SEED DATA USERS: 1 ADMIN, 5 SELLER, 3 BUYER
+-- ============================================
+-- Password Default
+-- Admin  : Admin123!
+-- Seller : Seller123!
+-- Buyer  : Buyer123!
+-- ============================================
+
+INSERT INTO users (
+    name,
+    username,
+    email,
+    phone,
+    password_hash,
+    profile_photo,
+    role,
+    status,
+    rejection_reason
+)
+VALUES
+    -- 1 ADMIN (always ACTIVE)
+    (
+        'Admin Fallora',
+        'admin_fallora',
+        'admin@fallora.com',
+        '081234560001',
+        '$2b$10$fcsDIUVNaHC8qrn.LI4D2eK6QYQ70uqP0Z2NT/D/nLcR4249DIH1y',
+        NULL,
+        'ADMIN',
+        'ACTIVE',
+        NULL
+    ),
+
+    -- 5 SELLERS
+    (
+        'Rina Wulandari',
+        'rina_craft',
+        'rina.seller@fallora.com',
+        '081234560002',
+        '$2b$10$2yj2yjsgaY1J7t9Lhqg88u6ZXWlQIGQOOoyYMpOLm8scrU1CxlQT.',
+        NULL,
+        'SELLER',
+        'ACTIVE',
+        NULL
+    ),
+    (
+        'Dimas Pratama',
+        'dimas_loom',
+        'dimas.seller@fallora.com',
+        '081234560003',
+        '$2b$10$2yj2yjsgaY1J7t9Lhqg88u6ZXWlQIGQOOoyYMpOLm8scrU1CxlQT.',
+        NULL,
+        'SELLER',
+        'ACTIVE',
+        NULL
+    ),
+    (
+        'Budi Santoso',
+        'budi_store',
+        'budi.seller@fallora.com',
+        '081234560004',
+        '$2b$10$2yj2yjsgaY1J7t9Lhqg88u6ZXWlQIGQOOoyYMpOLm8scrU1CxlQT.',
+        NULL,
+        'SELLER',
+        'PENDING',
+        NULL
+    ),
+    (
+        'Ayu Lestari',
+        'ayu_autumn',
+        'ayu.seller@fallora.com',
+        '081234560005',
+        '$2b$10$2yj2yjsgaY1J7t9Lhqg88u6ZXWlQIGQOOoyYMpOLm8scrU1CxlQT.',
+        NULL,
+        'SELLER',
+        'PENDING',
+        NULL
+    ),
+    (
+        'Hendra Wijaya',
+        'hendra_shop',
+        'hendra.seller@fallora.com',
+        '081234560006',
+        '$2b$10$2yj2yjsgaY1J7t9Lhqg88u6ZXWlQIGQOOoyYMpOLm8scrU1CxlQT.',
+        NULL,
+        'SELLER',
+        'REJECTED',
+        'Informasi identitas toko belum lengkap.'
+    ),
+
+    -- 3 BUYERS (ACTIVE)
+    (
+        'Siti Rahma',
+        'siti_rahma',
+        'siti.buyer@fallora.com',
+        '081234560007',
+        '$2b$10$uSparrgKoL59PYf1iZcVQODY.GLxFt1FAy7ehhj48RfJbVg70toF.',
+        NULL,
+        'BUYER',
+        'ACTIVE',
+        NULL
+    ),
+    (
+        'Fajar Nugroho',
+        'fajar_nugroho',
+        'fajar.buyer@fallora.com',
+        '081234560008',
+        '$2b$10$uSparrgKoL59PYf1iZcVQODY.GLxFt1FAy7ehhj48RfJbVg70toF.',
+        NULL,
+        'BUYER',
+        'ACTIVE',
+        NULL
+    ),
+    (
+        'Nadia Putri',
+        'nadia_putri',
+        'nadia.buyer@fallora.com',
+        '081234560009',
+        '$2b$10$uSparrgKoL59PYf1iZcVQODY.GLxFt1FAy7ehhj48RfJbVg70toF.',
+        NULL,
+        'BUYER',
+        'ACTIVE',
+        NULL
+    )
+ON CONFLICT (email) DO NOTHING;
