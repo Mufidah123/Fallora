@@ -271,18 +271,16 @@ Pengunjung yang belum memiliki akun juga dapat melihat katalog dan detail produk
 
 ## 3. Teknologi yang Digunakan
 
-| Teknologi | Kegunaan |
-|---|---|
-| Next.js | Framework pengembangan aplikasi web. |
-| React.js | Membangun antarmuka pengguna berbasis komponen. |
-| Tailwind CSS | Styling dan pengaturan tampilan aplikasi. |
-| JavaScript (JSX) | Bahasa pemrograman dan penulisan komponen. |
-| PostgreSQL | Sistem manajemen basis data relasional. |
-| Node.js | Lingkungan eksekusi JavaScript pada sisi server. |
-| node-postgres (`pg`) | Menghubungkan aplikasi dengan PostgreSQL menggunakan SQL. |
-| bcryptjs | Melakukan hashing password. |
-| Resend | Layanan pengiriman email notifikasi. |
-| falling-leaves | Efek animasi dekorasi daun berguguran. |
+- **Next.js** : Framework pengembangan aplikasi web.
+- **React.js** : Membangun antarmuka pengguna berbasis komponen.
+- **Tailwind CSS** : Styling dan pengaturan tampilan aplikasi.
+- **JavaScript (JSX)** : Bahasa pemrograman dan penulisan komponen.
+- **PostgreSQL** : Sistem manajemen basis data relasional.
+- **Node.js** : Lingkungan eksekusi JavaScript pada sisi server.
+- **node-postgres (`pg`)** : Menghubungkan aplikasi dengan PostgreSQL menggunakan SQL.
+- **bcryptjs** : Melakukan hashing password.
+- **Resend** : Layanan pengiriman email notifikasi.
+- **falling-leaves** : Package untuk efek animasi dekorasi daun berguguran.
 
 ## 4. Fitur dan Fungsionalitas
 
