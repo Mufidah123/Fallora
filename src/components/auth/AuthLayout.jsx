@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FallingLeaves } from "falling-leaves/react";
 
-export default function AuthLayoutWrapper({
+export default function AuthLayout({
     children,
     topRightText,
     topRightLinkText,

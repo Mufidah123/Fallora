@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthLayoutWrapper from "@/components/auth/AuthLayout";
+import PrimaryButton from "@/components/buttons/PrimaryButton";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -108,12 +109,12 @@ export default function SignupPage() {
             topRightLinkHref="/login"
         >
             <div className="text-center">
-                <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-white">
+                <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-[var(--color-surface)]">
                     Sign up
                 </h1>
-                <div className="mx-auto mt-2 h-[2px] w-12 bg-white/90 rounded-full" />
+                <div className="mx-auto mt-2 h-[2px] w-12 bg-[var(--color-surface)]/90 rounded-full" />
                 {isMultiStepActive && (
-                    <p className="mt-2 text-xs text-white/80">
+                    <p className="mt-2 text-xs text-[var(--color-surface)]/80">
                         Langkah {step} dari 2
                     </p>
                 )}
@@ -129,7 +130,7 @@ export default function SignupPage() {
                 onSubmit={
                     isMultiStepActive && step === 1 ? handleNextStep : handleSignupSubmit
                 }
-                className="mt-5 space-y-3.5"
+                className={isMultiStepActive ? "space-y-3.5" : "mt-5 space-y-3.5"}
             >
                 {showStep1Fields && (
                     <>
@@ -137,7 +138,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="name"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Nama Lengkap
                             </label>
@@ -164,7 +165,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="phone"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Nomor Telepon
                             </label>
@@ -190,7 +191,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="username"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Username
                             </label>
@@ -219,7 +220,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="email"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Email
                             </label>
@@ -246,7 +247,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="password"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Password
                             </label>
@@ -291,7 +292,7 @@ export default function SignupPage() {
                         <div>
                             <label
                                 htmlFor="confirmPassword"
-                                className="block text-sm font-semibold text-white mb-1"
+                                className="block text-sm font-semibold text-[var(--color-surface)] mb-1"
                             >
                                 Confirm Password
                             </label>
@@ -339,26 +340,22 @@ export default function SignupPage() {
                     {isMultiStepActive && step === 1 ? (
                         <button
                             type="submit"
-                            className="w-full rounded-lg bg-[var(--color-accent)] py-3 text-sm sm:text-base font-bold tracking-wider text-white shadow-md hover:bg-[var(--color-secondary)] active:scale-[0.99] transition cursor-pointer"
+                            className="w-full rounded-lg bg-[var(--color-accent)] py-3 text-sm sm:text-base font-bold tracking-wider text-[var(--color-surface)] shadow-md hover:bg-[var(--color-secondary)] hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99] transition cursor-pointer"
                         >
                             NEXT
                         </button>
                     ) : (
                         <>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full rounded-lg bg-gradient-to-r from-[var(--color-accent)] via-[#D9822B] to-[var(--color-peach)] py-3 text-sm sm:text-base font-bold tracking-wider text-white shadow-md hover:brightness-105 active:scale-[0.99] transition cursor-pointer"
-                            >
-                                {isSubmitting ? "PROCESSING..." : "SIGN UP"}
-                            </button>
+                            <PrimaryButton type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? "PROCESSING" : "SIGN UP"}
+                            </PrimaryButton>
                             {isMultiStepActive && step === 2 && (
                                 <button
                                     type="button"
                                     onClick={() => setStep(1)}
-                                    className="w-full text-center text-xs text-[var(--color-peach)] hover:text-white transition cursor-pointer"
+                                    className="w-full text-center text-sm text-[var(--color-surface)] hover:text-[var(--color-cream)] hover:translate-y-1 hover:text-shadow-lg transition cursor-pointer"
                                 >
-                                    ← Kembali ke data diri
+                                    Kembali ke data diri
                                 </button>
                             )}
                         </>
@@ -366,7 +363,7 @@ export default function SignupPage() {
                 </div>
 
                 {/* Footer Teks Kebijakan */}
-                <p className="pt-2 text-center text-xs leading-relaxed text-white/90">
+                <p className="pt-2 text-center text-xs leading-relaxed text-[var(--color-surface)]/90">
                     Dengan sign up, kamu menyetujui{" "}
                     <Link href="#" className="text-[var(--color-peach)] hover:underline font-bold">
                         Syarat, Ketentuan,

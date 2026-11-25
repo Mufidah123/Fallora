@@ -23,9 +23,7 @@ export default function HomepageClient({
     const [selectedCategory, setSelectedCategory] = useState(null);
 
     const [allProducts, setAllProducts] = useState(initialAllProducts);
-    const [hasMore, setHasMore] = useState(initialHasMore);
     const [loadingProducts, setLoadingProducts] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
 
     const [cartCount, setCartCount] = useState(initialCartCount || 0);
     const [toast, setToast] = useState(null);
@@ -51,7 +49,6 @@ export default function HomepageClient({
             const data = await res.json();
             if (res.ok) {
                 setAllProducts(data.products || []);
-                setHasMore(Boolean(data.hasMore));
             }
         } catch {
             showToast("Gagal memuat produk.", "error");
@@ -78,28 +75,6 @@ export default function HomepageClient({
         setActiveSearch("");
         setSelectedCategory(null);
         setAllProducts(initialAllProducts);
-        setHasMore(initialHasMore);
-    };
-
-    const handleLoadMore = async () => {
-        if (!isBuyer || loadingMore) return;
-        setLoadingMore(true);
-        try {
-            const params = new URLSearchParams();
-            if (activeSearch) params.set("q", activeSearch);
-            if (selectedCategory) params.set("categoryId", String(selectedCategory));
-            params.set("limit", "10");
-            params.set("offset", String(allProducts.length));
-
-            const res = await fetch(`/api/products?${params.toString()}`);
-            const data = await res.json();
-            if (res.ok) {
-                setAllProducts((prev) => [...prev, ...(data.products || [])]);
-                setHasMore(Boolean(data.hasMore));
-            }
-        } finally {
-            setLoadingMore(false);
-        }
     };
 
     const handleAddToCart = async (product) => {
@@ -166,7 +141,8 @@ export default function HomepageClient({
                 <div className="border-b border-white/15 bg-black/10">
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs">
                         <div className="flex items-center gap-3 text-white/90">
-                            <span>Selamat datang di Fallora E-Commerce</span>
+                            {/* <span>Seller Center</span>mengarah ke halaman login tapi buat seller gitu (seller/login)*/}
+                            {/* <span>Mulai Berjualan</span>mengarah ke halaman login tapi buat seller gitu (seller/signup) */}
                             {currentUser?.role === "SELLER" && (
                                 <Link
                                     href="/seller/dashboard"

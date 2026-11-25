@@ -34,7 +34,6 @@ export default async function HomePage() {
       popularProducts={popularProducts}
       recommendedProducts={recommendedProducts}
       initialAllProducts={catalogData.products}
-      initialHasMore={catalogData.hasMore}
       initialCartCount={initialCartCount}
     />
   );

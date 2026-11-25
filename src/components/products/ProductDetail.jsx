@@ -13,7 +13,7 @@ function formatRupiah(val) {
     }).format(Number(val || 0));
 }
 
-export default function ProductDetailClient({
+export default function ProductDetail({
     product,
     images,
     reviews,
