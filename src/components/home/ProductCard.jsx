@@ -13,6 +13,7 @@ function formatRupiah(value) {
 
 export default function ProductCard({ product, onAddToCart, badgeLabel }) {
     const [adding, setAdding] = useState(false);
+    const [imageFailed, setImageFailed] = useState(false);
 
     const isOutOfStock = Number(product.stock) <= 0;
 
@@ -36,10 +37,14 @@ export default function ProductCard({ product, onAddToCart, badgeLabel }) {
                 href={`/products/${product.id}`}
                 className="relative aspect-square w-full overflow-hidden bg-[var(--color-surface)]"
             >
-                {product.primary_image ? (
+                {product.primary_image && !imageFailed ? (
                     <img
                         src={product.primary_image}
                         alt={product.name}
+                        ref={(el) => {
+                            if (el?.complete && el.naturalWidth === 0) setImageFailed(true);
+                        }}
+                        onError={() => setImageFailed(true)}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                 ) : (

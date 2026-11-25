@@ -1,11 +1,14 @@
 import { query } from "@/lib/db";
 
+export const PAGE_SIZE = 20;
+
 const BASE_PRODUCT_SELECT = `
   SELECT p.id, p.name, p.description, p.price, p.stock, p.created_at,
         c.id AS category_id, c.name AS category_name,
         s.id AS store_id, s.name AS store_name,
         pi.image_path AS primary_image,
-        COALESCE(SUM(CASE WHEN so.status <> 'CANCELLED' THEN oi.quantity ELSE 0 END), 0)::int AS sold_count
+        COALESCE(SUM(CASE WHEN so.status <> 'CANCELLED' THEN oi.quantity ELSE 0 END), 0)::int AS sold_count,
+        (SELECT COUNT(*) FROM reviews r WHERE r.product_id = p.id)::int AS review_count
     FROM products p
     JOIN categories c ON c.id = p.category_id
     JOIN stores s ON s.id = p.store_id
@@ -13,6 +16,37 @@ const BASE_PRODUCT_SELECT = `
     LEFT JOIN order_items oi ON oi.product_id = p.id
     LEFT JOIN sub_orders so ON so.id = oi.sub_order_id
 `;
+
+const GROUP_BY = "GROUP BY p.id, c.id, c.name, s.id, s.name, pi.image_path";
+
+// Whitelist ORDER BY (tidak pernah memasukkan input user langsung ke SQL)
+export const SORT_ORDERS = {
+    popular: "review_count DESC, sold_count DESC, p.created_at DESC",
+    latest: "p.created_at DESC",
+    bestseller: "sold_count DESC, p.created_at DESC",
+    price_asc: "p.price ASC, p.id ASC",
+    price_desc: "p.price DESC, p.id ASC",
+};
+
+// Ubah searchParams halaman menjadi opsi katalog yang valid
+export function parseCatalogQuery(searchParams = {}) {
+    const first = (v) => (Array.isArray(v) ? v[0] : v);
+    const num = (v) => {
+        const n = Number(first(v));
+        return first(v) !== undefined && first(v) !== "" && Number.isFinite(n) && n >= 0
+            ? n
+            : null;
+    };
+    const sort = first(searchParams.sort);
+    const page = Math.floor(Number(first(searchParams.page)));
+
+    return {
+        sort: SORT_ORDERS[sort] ? sort : "popular",
+        page: Number.isInteger(page) && page > 0 ? page : 1,
+        minPrice: num(searchParams.minPrice),
+        maxPrice: num(searchParams.maxPrice),
+    };
+}
 
 export async function getAllCategories() {
     const res = await query(
@@ -22,14 +56,23 @@ export async function getAllCategories() {
     return res.rows;
 }
 
+export async function getCategoryById(id) {
+    if (!Number.isInteger(Number(id)) || Number(id) <= 0) return null;
+    const res = await query(
+        `SELECT id, name, description FROM categories WHERE id = $1 LIMIT 1`,
+        [Number(id)]
+    );
+    return res.rows[0] || null;
+}
+
 export async function getPopularProducts(limit = 5) {
     const res = await query(
         `${BASE_PRODUCT_SELECT}
         WHERE p.is_active = TRUE
-        GROUP BY p.id, c.id, c.name, s.id, s.name, pi.image_path
-        ORDER BY sold_count DESC, p.created_at DESC
+        ${GROUP_BY}
+        ORDER BY ${SORT_ORDERS.bestseller}
         LIMIT $1`,
-            [limit]
+        [limit]
     );
     return res.rows;
 }
@@ -38,10 +81,10 @@ export async function getRandomRecommendedProducts(limit = 5) {
     const res = await query(
         `${BASE_PRODUCT_SELECT}
         WHERE p.is_active = TRUE AND p.stock > 0
-        GROUP BY p.id, c.id, c.name, s.id, s.name, pi.image_path
+        ${GROUP_BY}
         ORDER BY RANDOM()
         LIMIT $1`,
-            [limit]
+        [limit]
     );
     return res.rows;
 }
@@ -49,14 +92,19 @@ export async function getRandomRecommendedProducts(limit = 5) {
 export async function getCatalogProducts({
     q = "",
     categoryId = null,
+    sort = "popular",
+    minPrice = null,
+    maxPrice = null,
     limit = 10,
     offset = 0,
 } = {}) {
     const conditions = ["p.is_active = TRUE"];
     const params = [];
 
-    if (q.trim()) {
-        params.push(`%${q.trim()}%`);
+    const keyword = String(q).trim();
+    if (keyword) {
+        // Escape wildcard LIKE agar "50%" atau "_" dicari apa adanya
+        params.push(`%${keyword.replace(/[\\%_]/g, "\\$&")}%`);
         conditions.push(`p.name ILIKE $${params.length}`);
     }
 
@@ -65,11 +113,21 @@ export async function getCatalogProducts({
         conditions.push(`p.category_id = $${params.length}`);
     }
 
+    if (minPrice !== null && minPrice !== undefined) {
+        params.push(Number(minPrice));
+        conditions.push(`p.price >= $${params.length}`);
+    }
+
+    if (maxPrice !== null && maxPrice !== undefined) {
+        params.push(Number(maxPrice));
+        conditions.push(`p.price <= $${params.length}`);
+    }
+
     const whereClause = `WHERE ${conditions.join(" AND ")}`;
+    const orderBy = SORT_ORDERS[sort] || SORT_ORDERS.popular;
 
     const countRes = await query(
-        `SELECT COUNT(*)::int AS total FROM products p
-        ${whereClause}`,
+        `SELECT COUNT(*)::int AS total FROM products p ${whereClause}`,
         params
     );
     const total = countRes.rows[0]?.total || 0;
@@ -78,10 +136,10 @@ export async function getCatalogProducts({
     const productsRes = await query(
         `${BASE_PRODUCT_SELECT}
         ${whereClause}
-        GROUP BY p.id, c.id, c.name, s.id, s.name, pi.image_path
-        ORDER BY p.created_at DESC
+        ${GROUP_BY}
+        ORDER BY ${orderBy}
         LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
-            listParams
+        listParams
     );
 
     return {
@@ -98,7 +156,8 @@ export async function getBuyerHeaderContext(userId) {
 
     const userRes = await query(
         `SELECT id, name, username, email, profile_photo, role, status
-        FROM users WHERE id = $1 LIMIT 1`, [userId]
+        FROM users WHERE id = $1 LIMIT 1`,
+        [userId]
     );
 
     const currentUser = userRes.rows[0] || null;
@@ -110,7 +169,7 @@ export async function getBuyerHeaderContext(userId) {
             FROM carts c
             LEFT JOIN cart_items ci ON ci.cart_id = c.id
             WHERE c.buyer_id = $1`,
-                [currentUser.id]
+            [currentUser.id]
         );
         initialCartCount = cartRes.rows[0]?.total_items || 0;
     }
