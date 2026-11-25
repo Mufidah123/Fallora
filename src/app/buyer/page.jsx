@@ -12,6 +12,15 @@ function formatRupiah(val) {
     }).format(Number(val || 0));
 }
 
+const EMPTY_ADDRESS = {
+    recipient_name: "",
+    phone: "",
+    address: "",
+    city: "",
+    postal_code: "",
+    is_default: false,
+};
+
 const STATUS_LABEL = {
     PENDING_PAYMENT: { label: "Menunggu Pembayaran", style: "bg-amber-100 text-amber-900" },
     PROCESSING: { label: "Sedang Diproses", style: "bg-orange-100 text-orange-900" },
@@ -48,6 +57,18 @@ export default function BuyerDashboardPage() {
 
     const [orders, setOrders] = useState([]);
 
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddressId, setSelectedAddressId] = useState("");
+    const [addrForm, setAddrForm] = useState(EMPTY_ADDRESS);
+    const [editingAddrId, setEditingAddrId] = useState(null);
+    const [savingAddr, setSavingAddr] = useState(false);
+
+    const [wishlist, setWishlist] = useState([]);
+
+    const [reviewingId, setReviewingId] = useState(null);
+    const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+    const [savingReview, setSavingReview] = useState(false);
+
     const showToast = (message, type = "success") => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3500);
@@ -56,16 +77,18 @@ export default function BuyerDashboardPage() {
     // Navbar menaut ke /buyer?tab=orders atau /buyer?tab=profile
     useEffect(() => {
         const tab = new URLSearchParams(window.location.search).get("tab");
-        if (["cart", "orders", "profile"].includes(tab)) setActiveTab(tab);
+        if (["cart", "orders", "profile", "addresses", "wishlist"].includes(tab)) setActiveTab(tab);
     }, []);
 
     const fetchAllData = useCallback(async () => {
         setLoading(true);
         try {
-            const [profRes, cartRes, ordRes] = await Promise.all([
+            const [profRes, cartRes, ordRes, addrRes, wishRes] = await Promise.all([
                 fetch("/api/buyer/profile"),
                 fetch("/api/buyer/cart"),
                 fetch("/api/buyer/orders"),
+                fetch("/api/buyer/addresses"),
+                fetch("/api/buyer/wishlist"),
             ]);
 
             if (profRes.status === 401 || cartRes.status === 401) {
@@ -98,6 +121,28 @@ export default function BuyerDashboardPage() {
             if (ordRes.ok) {
                 const oData = await ordRes.json();
                 setOrders(oData.orders || []);
+            }
+
+            if (addrRes.ok) {
+                const aData = await addrRes.json();
+                const list = aData.addresses || [];
+                setAddresses(list);
+                const def = list.find((a) => a.is_default) || list[0];
+                if (def) {
+                    setSelectedAddressId(String(def.id));
+                    setShipping({
+                        shipping_recipient: def.recipient_name,
+                        shipping_phone: def.phone,
+                        shipping_address: def.address,
+                        shipping_city: def.city,
+                        shipping_postal_code: def.postal_code,
+                    });
+                }
+            }
+
+            if (wishRes.ok) {
+                const wData = await wishRes.json();
+                setWishlist(wData.items || []);
             }
         } finally {
             setLoading(false);
@@ -142,7 +187,10 @@ export default function BuyerDashboardPage() {
             const res = await fetch("/api/buyer/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(shipping),
+                body: JSON.stringify({
+                    ...shipping,
+                    address_id: selectedAddressId ? Number(selectedAddressId) : null,
+                }),
             });
             const data = await res.json();
             if (!res.ok) {
@@ -159,6 +207,127 @@ export default function BuyerDashboardPage() {
             setActiveTab("orders");
         } finally {
             setCheckingOut(false);
+        }
+    };
+
+    const reloadAddresses = async () => {
+        const res = await fetch("/api/buyer/addresses");
+        if (res.ok) setAddresses((await res.json()).addresses || []);
+    };
+
+    const handlePickAddress = (value) => {
+        setSelectedAddressId(value);
+        const addr = addresses.find((a) => String(a.id) === value);
+        if (!addr) return;
+        setShipping({
+            shipping_recipient: addr.recipient_name,
+            shipping_phone: addr.phone,
+            shipping_address: addr.address,
+            shipping_city: addr.city,
+            shipping_postal_code: addr.postal_code,
+        });
+    };
+
+    const handleSaveAddress = async (e) => {
+        e.preventDefault();
+        setSavingAddr(true);
+        try {
+            const res = await fetch(
+                editingAddrId ? `/api/buyer/addresses/${editingAddrId}` : "/api/buyer/addresses",
+                {
+                    method: editingAddrId ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(addrForm),
+                }
+            );
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.message || "Gagal menyimpan alamat.", "error");
+                return;
+            }
+            showToast(data.message || "Alamat tersimpan.");
+            setAddrForm(EMPTY_ADDRESS);
+            setEditingAddrId(null);
+            await reloadAddresses();
+        } finally {
+            setSavingAddr(false);
+        }
+    };
+
+    const handleEditAddress = (addr) => {
+        setEditingAddrId(addr.id);
+        setAddrForm({
+            recipient_name: addr.recipient_name,
+            phone: addr.phone,
+            address: addr.address,
+            city: addr.city,
+            postal_code: addr.postal_code,
+            is_default: addr.is_default,
+        });
+    };
+
+    const handleDefaultAddress = async (id) => {
+        const res = await fetch(`/api/buyer/addresses/${id}`, { method: "PATCH" });
+        const data = await res.json();
+        showToast(data.message, res.ok ? "success" : "error");
+        if (res.ok) await reloadAddresses();
+    };
+
+    const handleDeleteAddress = async (id) => {
+        if (!window.confirm("Hapus alamat ini?")) return;
+        const res = await fetch(`/api/buyer/addresses/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        showToast(data.message, res.ok ? "success" : "error");
+        if (res.ok) {
+            if (String(id) === selectedAddressId) setSelectedAddressId("");
+            if (editingAddrId === id) {
+                setEditingAddrId(null);
+                setAddrForm(EMPTY_ADDRESS);
+            }
+            await reloadAddresses();
+        }
+    };
+
+    const handleRemoveWishlist = async (productId) => {
+        const res = await fetch(`/api/buyer/wishlist?productId=${productId}`, { method: "DELETE" });
+        if (res.ok) setWishlist((prev) => prev.filter((w) => w.product_id !== productId));
+    };
+
+    const handleWishlistToCart = async (productId) => {
+        const res = await fetch("/api/cart/items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId, quantity: 1 }),
+        });
+        const data = await res.json();
+        showToast(data.message, res.ok ? "success" : "error");
+        if (res.ok) {
+            const cartRes = await fetch("/api/buyer/cart");
+            if (cartRes.ok) setCartItems((await cartRes.json()).items || []);
+        }
+    };
+
+    const handleSubmitReview = async (e, orderItemId) => {
+        e.preventDefault();
+        setSavingReview(true);
+        try {
+            const res = await fetch("/api/buyer/reviews", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_item_id: orderItemId, ...reviewForm }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.message || "Gagal menyimpan ulasan.", "error");
+                return;
+            }
+            showToast(data.message);
+            setReviewingId(null);
+            setReviewForm({ rating: 5, comment: "" });
+            const ordRes = await fetch("/api/buyer/orders");
+            if (ordRes.ok) setOrders((await ordRes.json()).orders || []);
+        } finally {
+            setSavingReview(false);
         }
     };
 
@@ -262,6 +431,28 @@ export default function BuyerDashboardPage() {
                     >
                         Profile Management
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("addresses")}
+                        className={`rounded-lg px-4 py-2 text-xs font-bold transition cursor-pointer ${activeTab === "addresses"
+                                ? "bg-[var(--color-primary)] text-white"
+                                : "bg-white text-[var(--color-dark)] border border-[#E7E2DC] hover:bg-[var(--color-cream)]/50"
+                            }`}
+                    >
+                        Alamat Pengiriman ({addresses.length})
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("wishlist")}
+                        className={`rounded-lg px-4 py-2 text-xs font-bold transition cursor-pointer ${activeTab === "wishlist"
+                                ? "bg-[var(--color-primary)] text-white"
+                                : "bg-white text-[var(--color-dark)] border border-[#E7E2DC] hover:bg-[var(--color-cream)]/50"
+                            }`}
+                    >
+                        Wishlist ({wishlist.length})
+                    </button>
                 </div>
 
                 {loading ? (
@@ -327,6 +518,14 @@ export default function BuyerDashboardPage() {
                                             >
                                                 +
                                             </button>
+                                            <button
+                                                type="button"
+                                                disabled={updatingItemId === item.cart_item_id}
+                                                onClick={() => handleUpdateQty(item.cart_item_id, 0)}
+                                                className="ml-2 text-[11px] font-semibold text-red-700 underline underline-offset-2 hover:text-red-900 cursor-pointer disabled:opacity-40"
+                                            >
+                                                Hapus
+                                            </button>
                                         </div>
                                     </div>
                                 ))
@@ -342,6 +541,22 @@ export default function BuyerDashboardPage() {
                                 Ringkasan & Checkout
                             </h2>
 
+                            {addresses.length > 0 && (
+                                <select
+                                    value={selectedAddressId}
+                                    onChange={(e) => handlePickAddress(e.target.value)}
+                                    aria-label="Pilih alamat tersimpan"
+                                    className="w-full rounded-lg border border-[#DDD5CB] bg-white px-3 py-2 text-xs"
+                                >
+                                    <option value="">Isi alamat secara manual</option>
+                                    {addresses.map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.recipient_name} — {a.city}
+                                            {a.is_default ? " (utama)" : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                             <input
                                 type="text"
                                 required
@@ -409,6 +624,185 @@ export default function BuyerDashboardPage() {
                             </button>
                         </form>
                     </div>
+                ) : activeTab === "addresses" ? (
+                    /* TAB: ALAMAT PENGIRIMAN */
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                        <div className="lg:col-span-7 space-y-3">
+                            {addresses.length === 0 ? (
+                                <div className="rounded-xl border border-[#E7E2DC] bg-white p-8 text-center text-sm text-[var(--color-muted)]">
+                                    Belum ada alamat tersimpan. Tambahkan satu di formulir samping.
+                                </div>
+                            ) : (
+                                addresses.map((a) => (
+                                    <div key={a.id} className="rounded-xl border border-[#E7E2DC] bg-white p-4 text-xs">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <span className="text-sm font-bold text-[var(--color-dark)]">
+                                                {a.recipient_name}
+                                            </span>
+                                            {a.is_default && (
+                                                <span className="rounded border border-[var(--color-accent)]/50 bg-[var(--color-cream)]/60 px-2 py-0.5 text-[10px] font-bold text-[var(--color-secondary)]">
+                                                    Alamat utama
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="mt-0.5 text-[var(--color-muted)]">{a.phone}</p>
+                                        <p className="mt-1.5 leading-relaxed">
+                                            {a.address}, {a.city} {a.postal_code}
+                                        </p>
+                                        <div className="mt-3 flex flex-wrap gap-3 font-semibold">
+                                            <button type="button" onClick={() => handleEditAddress(a)} className="underline underline-offset-2 hover:text-[var(--color-primary)] cursor-pointer">
+                                                Ubah
+                                            </button>
+                                            {!a.is_default && (
+                                                <button type="button" onClick={() => handleDefaultAddress(a.id)} className="underline underline-offset-2 hover:text-[var(--color-primary)] cursor-pointer">
+                                                    Jadikan utama
+                                                </button>
+                                            )}
+                                            <button type="button" onClick={() => handleDeleteAddress(a.id)} className="text-red-700 underline underline-offset-2 hover:text-red-900 cursor-pointer">
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <form
+                            onSubmit={handleSaveAddress}
+                            className="lg:col-span-5 rounded-xl border border-[#E7E2DC] bg-white p-5 space-y-3 h-fit"
+                        >
+                            <h2 className="text-base font-bold text-[var(--color-primary)]">
+                                {editingAddrId ? "Ubah alamat" : "Tambah alamat"}
+                            </h2>
+                            <input
+                                type="text"
+                                required
+                                placeholder="Nama penerima"
+                                value={addrForm.recipient_name}
+                                onChange={(e) => setAddrForm((f) => ({ ...f, recipient_name: e.target.value }))}
+                                className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                            />
+                            <input
+                                type="text"
+                                required
+                                placeholder="No. telepon"
+                                value={addrForm.phone}
+                                onChange={(e) => setAddrForm((f) => ({ ...f, phone: e.target.value }))}
+                                className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                            />
+                            <textarea
+                                rows={2}
+                                required
+                                placeholder="Alamat lengkap (jalan, nomor, RT/RW)"
+                                value={addrForm.address}
+                                onChange={(e) => setAddrForm((f) => ({ ...f, address: e.target.value }))}
+                                className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                            />
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Kota / Kabupaten"
+                                    value={addrForm.city}
+                                    onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))}
+                                    className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                                />
+                                <input
+                                    type="text"
+                                    required
+                                    inputMode="numeric"
+                                    maxLength={5}
+                                    placeholder="Kode pos"
+                                    value={addrForm.postal_code}
+                                    onChange={(e) => setAddrForm((f) => ({ ...f, postal_code: e.target.value }))}
+                                    className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                                />
+                            </div>
+                            {!editingAddrId && (
+                                <label className="flex items-center gap-2 text-xs">
+                                    <input
+                                        type="checkbox"
+                                        checked={addrForm.is_default}
+                                        onChange={(e) => setAddrForm((f) => ({ ...f, is_default: e.target.checked }))}
+                                    />
+                                    Jadikan alamat utama
+                                </label>
+                            )}
+                            <div className="flex gap-2">
+                                <button
+                                    type="submit"
+                                    disabled={savingAddr}
+                                    className="rounded-lg bg-[var(--color-secondary)] px-5 py-2.5 text-xs font-bold text-white hover:bg-[var(--color-primary)] transition cursor-pointer disabled:opacity-50"
+                                >
+                                    {savingAddr ? "Menyimpan..." : editingAddrId ? "Simpan perubahan" : "Simpan alamat"}
+                                </button>
+                                {editingAddrId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingAddrId(null);
+                                            setAddrForm(EMPTY_ADDRESS);
+                                        }}
+                                        className="rounded-lg border border-[#D6CFC6] px-4 py-2.5 text-xs font-semibold cursor-pointer"
+                                    >
+                                        Batal
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                ) : activeTab === "wishlist" ? (
+                    /* TAB: WISHLIST */
+                    <div className="space-y-3">
+                        {wishlist.length === 0 ? (
+                            <div className="rounded-xl border border-[#E7E2DC] bg-white p-8 text-center space-y-3">
+                                <p className="text-sm font-semibold">Wishlist kamu masih kosong.</p>
+                                <p className="text-xs text-[var(--color-muted)]">
+                                    Buka detail produk dan tekan &quot;Simpan ke wishlist&quot; untuk menyimpannya di sini.
+                                </p>
+                                <Link href="/products" className="inline-block rounded-lg bg-[var(--color-secondary)] px-4 py-2 text-xs font-bold text-white">
+                                    Lihat produk
+                                </Link>
+                            </div>
+                        ) : (
+                            wishlist.map((w) => (
+                                <div
+                                    key={w.product_id}
+                                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E7E2DC] bg-white p-3.5"
+                                >
+                                    <Link href={`/products/${w.product_id}`} className="flex min-w-0 items-center gap-3">
+                                        <img
+                                            src={w.primary_image || "/images/products/product-1.png"}
+                                            alt={w.name}
+                                            className="h-16 w-16 shrink-0 rounded-lg border border-[#EDE8E2] object-cover"
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-bold hover:text-[var(--color-secondary)]">{w.name}</div>
+                                            <div className="text-xs text-[var(--color-muted)]">Toko: {w.store_name}</div>
+                                            <div className="mt-1 text-sm font-bold text-[var(--color-primary)]">{formatRupiah(w.price)}</div>
+                                        </div>
+                                    </Link>
+                                    <div className="flex items-center gap-3 text-xs font-semibold">
+                                        <button
+                                            type="button"
+                                            disabled={w.stock <= 0}
+                                            onClick={() => handleWishlistToCart(w.product_id)}
+                                            className="rounded-lg bg-[var(--color-secondary)] px-3.5 py-2 font-bold text-white hover:bg-[var(--color-primary)] cursor-pointer disabled:cursor-not-allowed disabled:bg-stone-300"
+                                        >
+                                            {w.stock <= 0 ? "Stok habis" : "Add to Cart"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveWishlist(w.product_id)}
+                                            className="text-red-700 underline underline-offset-2 hover:text-red-900 cursor-pointer"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 ) : activeTab === "orders" ? (
                     /* TAB 2: ORDER HISTORY & ORDER TRACKING */
                     <div className="space-y-4">
@@ -462,13 +856,82 @@ export default function BuyerDashboardPage() {
 
                                                     <div className="divide-y divide-[#E7E2DC] text-xs">
                                                         {sub.items?.map((it) => (
-                                                            <div key={it.id} className="flex justify-between py-1.5">
-                                                                <span>
-                                                                    {it.product_name} × {it.quantity}
-                                                                </span>
-                                                                <span className="font-semibold">
-                                                                    {formatRupiah(it.subtotal)}
-                                                                </span>
+                                                            <div key={it.id} className="py-1.5">
+                                                                <div className="flex justify-between">
+                                                                    <span>
+                                                                        {it.product_name} × {it.quantity}
+                                                                    </span>
+                                                                    <span className="font-semibold">
+                                                                        {formatRupiah(it.subtotal)}
+                                                                    </span>
+                                                                </div>
+
+                                                                {sub.status === "COMPLETED" &&
+                                                                    (it.review_rating ? (
+                                                                        <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+                                                                            Ulasanmu: ★ {it.review_rating}/5
+                                                                            {it.review_comment ? ` — ${it.review_comment}` : ""}
+                                                                        </p>
+                                                                    ) : reviewingId === it.id ? (
+                                                                        <form
+                                                                            onSubmit={(e) => handleSubmitReview(e, it.id)}
+                                                                            className="mt-2 space-y-2 rounded-lg border border-[#E7E2DC] bg-white p-3"
+                                                                        >
+                                                                            <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
+                                                                                {[1, 2, 3, 4, 5].map((n) => (
+                                                                                    <button
+                                                                                        key={n}
+                                                                                        type="button"
+                                                                                        role="radio"
+                                                                                        aria-checked={reviewForm.rating === n}
+                                                                                        aria-label={`${n} bintang`}
+                                                                                        onClick={() => setReviewForm((r) => ({ ...r, rating: n }))}
+                                                                                        className={`cursor-pointer text-xl leading-none ${n <= reviewForm.rating ? "text-[var(--color-accent)]" : "text-stone-300"}`}
+                                                                                    >
+                                                                                        ★
+                                                                                    </button>
+                                                                                ))}
+                                                                                <span className="ml-2 text-[11px] text-[var(--color-muted)]">
+                                                                                    {reviewForm.rating}/5
+                                                                                </span>
+                                                                            </div>
+                                                                            <textarea
+                                                                                rows={2}
+                                                                                maxLength={1000}
+                                                                                placeholder="Ceritakan pengalamanmu dengan produk ini (opsional)"
+                                                                                value={reviewForm.comment}
+                                                                                onChange={(e) => setReviewForm((r) => ({ ...r, comment: e.target.value }))}
+                                                                                className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                                                                            />
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    type="submit"
+                                                                                    disabled={savingReview}
+                                                                                    className="rounded-lg bg-[var(--color-secondary)] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[var(--color-primary)] cursor-pointer disabled:opacity-50"
+                                                                                >
+                                                                                    {savingReview ? "Menyimpan..." : "Kirim ulasan"}
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setReviewingId(null)}
+                                                                                    className="rounded-lg border border-[#D6CFC6] px-3 py-1.5 text-[11px] font-semibold cursor-pointer"
+                                                                                >
+                                                                                    Batal
+                                                                                </button>
+                                                                            </div>
+                                                                        </form>
+                                                                    ) : (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setReviewingId(it.id);
+                                                                                setReviewForm({ rating: 5, comment: "" });
+                                                                            }}
+                                                                            className="mt-1 text-[11px] font-semibold text-[var(--color-secondary)] underline underline-offset-2 hover:text-[var(--color-primary)] cursor-pointer"
+                                                                        >
+                                                                            Beri rating &amp; ulasan
+                                                                        </button>
+                                                                    ))}
                                                             </div>
                                                         ))}
                                                     </div>
