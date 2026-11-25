@@ -43,8 +43,11 @@ export async function GET() {
        oi.product_name,
        oi.price,
        oi.quantity,
-       oi.subtotal
+       oi.subtotal,
+       r.rating AS review_rating,
+       r.comment AS review_comment
      FROM order_items oi
+     LEFT JOIN reviews r ON r.order_item_id = oi.id
      JOIN sub_orders so ON so.id = oi.sub_order_id
      JOIN orders o ON o.id = so.order_id
      WHERE o.buyer_id = $1
@@ -89,6 +92,7 @@ export async function POST(request) {
     const shippingAddress = String(body.shipping_address || "").trim();
     const shippingCity = String(body.shipping_city || "").trim();
     const shippingPostalCode = String(body.shipping_postal_code || "").trim();
+    const rawAddressId = Number(body.address_id);
 
     if (
         !shippingRecipient ||
@@ -106,6 +110,16 @@ export async function POST(request) {
     const client = await pool.connect();
     try {
         await client.query("BEGIN");
+
+        // address_id hanya dipakai kalau alamat itu memang milik buyer ini
+        let addressId = null;
+        if (Number.isInteger(rawAddressId) && rawAddressId > 0) {
+            const addrRes = await client.query(
+                `SELECT id FROM addresses WHERE id = $1 AND buyer_id = $2`,
+                [rawAddressId, session.userId]
+            );
+            addressId = addrRes.rows[0]?.id ?? null;
+        }
 
         const cartRes = await client.query(
             `SELECT ci.id AS cart_item_id, ci.quantity,
@@ -171,9 +185,10 @@ export async function POST(request) {
             shipping_phone,
             shipping_address,
             shipping_city,
-            shipping_postal_code
+            shipping_postal_code,
+            address_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, order_number`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, order_number`,
             [
                 session.userId,
                 orderNumber,
@@ -183,6 +198,7 @@ export async function POST(request) {
                 shippingAddress,
                 shippingCity,
                 shippingPostalCode,
+                addressId,
             ]
         );
 
