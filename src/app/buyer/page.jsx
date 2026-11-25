@@ -65,9 +65,35 @@ export default function BuyerDashboardPage() {
 
     const [wishlist, setWishlist] = useState([]);
 
+    const [storeName, setStoreName] = useState("");
+    const [becomingSeller, setBecomingSeller] = useState(false);
     const [reviewingId, setReviewingId] = useState(null);
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
     const [savingReview, setSavingReview] = useState(false);
+
+    const handleBecomeSeller = async (e) => {
+        e.preventDefault();
+        if (!window.confirm("Daftar sebagai Seller? Akun kamu akan menjadi akun Seller dan menunggu persetujuan Admin.")) return;
+        setBecomingSeller(true);
+        try {
+            const res = await fetch("/api/buyer/become-seller", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ store_name: storeName }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.message || "Gagal mendaftar sebagai seller.", "error");
+                return;
+            }
+            router.push(data.redirectTo || "/seller/pending");
+            router.refresh();
+        } catch {
+            showToast("Terjadi gangguan jaringan.", "error");
+        } finally {
+            setBecomingSeller(false);
+        }
+    };
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -481,7 +507,7 @@ export default function BuyerDashboardPage() {
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <img
-                                                src={item.primary_image || "/images/products/product-1.png"}
+                                                src={item.primary_image || "/images/product-1.jpg"}
                                                 alt={item.product_name}
                                                 className="h-16 w-16 rounded-lg object-cover border border-[#EDE8E2] shrink-0"
                                             />
@@ -772,7 +798,7 @@ export default function BuyerDashboardPage() {
                                 >
                                     <Link href={`/products/${w.product_id}`} className="flex min-w-0 items-center gap-3">
                                         <img
-                                            src={w.primary_image || "/images/products/product-1.png"}
+                                            src={w.primary_image || "/images/product-1.jpg"}
                                             alt={w.name}
                                             className="h-16 w-16 shrink-0 rounded-lg border border-[#EDE8E2] object-cover"
                                         />
@@ -945,6 +971,7 @@ export default function BuyerDashboardPage() {
                     </div>
                 ) : (
                     /* TAB 3: PROFILE MANAGEMENT */
+                    <div className="space-y-6">
                     <form
                         onSubmit={handleSaveProfile}
                         className="max-w-xl rounded-xl border border-[#E7E2DC] bg-white p-6 space-y-4 shadow-2xs"
@@ -1003,6 +1030,36 @@ export default function BuyerDashboardPage() {
                             {savingProfile ? "Menyimpan..." : "Simpan Perubahan"}
                         </button>
                     </form>
+
+                    <form
+                        onSubmit={handleBecomeSeller}
+                        className="max-w-xl rounded-xl border border-[#E7E2DC] bg-white p-6 space-y-3 shadow-2xs"
+                    >
+                        <h2 className="text-base font-bold text-[var(--color-primary)]">Mulai Berjualan</h2>
+                        <p className="text-xs leading-relaxed text-[var(--color-muted)]">
+                            Ingin menjual produk di Fallora? Daftarkan tokomu. Akun akan berubah menjadi akun Seller
+                            setelah disetujui Admin, dan kamu masuk lewat Seller Centre.
+                        </p>
+                        <div>
+                            <label className="block text-xs font-semibold mb-1">Nama Toko</label>
+                            <input
+                                type="text"
+                                required
+                                maxLength={150}
+                                value={storeName}
+                                onChange={(e) => setStoreName(e.target.value)}
+                                className="w-full rounded-lg border border-[#DDD5CB] bg-[var(--color-surface)] px-3 py-2 text-xs"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={becomingSeller}
+                            className="rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-xs font-bold text-white hover:bg-[var(--color-secondary)] transition cursor-pointer disabled:opacity-50"
+                        >
+                            {becomingSeller ? "Memproses..." : "Daftar Sebagai Seller"}
+                        </button>
+                    </form>
+                    </div>
                 )}
             </main>
         </div>

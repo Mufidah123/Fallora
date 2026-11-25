@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requirePendingSeller } from "@/lib/guards";
-import { deleteRejectedAccount } from "./actions";
+import { deleteRejectedAccount, revertToBuyer } from "./actions";
 import ActionForm from "@/components/ui/ActionForm";
 import { LogoutButton } from "@/components/dashboard/NavLinks";
 
@@ -41,9 +41,14 @@ export default async function PendingSellerPage() {
                             Anda dapat menghapus akun ini, lalu mendaftar ulang dengan data yang sudah dilengkapi.
                         </p>
                         <ActionForm
+                            action={revertToBuyer}
+                            label="Kembali menjadi Pembeli"
+                            buttonClass="btn btn-line mt-4"
+                        />
+                        <ActionForm
                             action={deleteRejectedAccount}
                             label="Hapus akun"
-                            buttonClass="btn btn-danger mt-4"
+                            buttonClass="btn btn-danger mt-3"
                             confirm="Hapus akun ini secara permanen?"
                         />
                     </>
