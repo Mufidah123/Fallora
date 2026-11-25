@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import ProductDetailClient from "@/components/products/ProductDetailClient";
+import SiteHeader from "@/components/layout/SiteHeader";
+import Footer from "@/components/layout/Footer";
 
 export const dynamic = "force-dynamic";
 
@@ -71,12 +73,16 @@ export default async function ProductDetailPage({ params }) {
     }
 
     return (
-        <ProductDetailClient
-            product={product}
-            images={imgRes.rows}
-            reviews={reviews}
-            avgRating={avgRating}
-            currentUser={currentUser}
-        />
+        <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <ProductDetailClient
+                product={product}
+                images={imgRes.rows}
+                reviews={reviews}
+                avgRating={avgRating}
+                currentUser={currentUser}
+            />
+            <Footer />
+        </div>
     );
 }
