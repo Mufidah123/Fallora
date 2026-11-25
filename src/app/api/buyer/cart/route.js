@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const res = await query(
-        `SELECTci.id AS cart_item_id,ci.quantity,
+        `SELECT ci.id AS cart_item_id, ci.quantity,
         p.id AS product_id, p.name AS product_name, p.price, p.stock,
         s.id AS store_id, s.name AS store_name, pi.image_path AS primary_image
         FROM carts c

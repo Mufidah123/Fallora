@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { categoryPath } from "@/lib/slug";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import Leaves from "@/components/home/Leaves";
+// import Leaves from "@/components/home/Leaves";
 import ProductGrid from "@/components/catalog/ProductGrid";
 import {
   getAllCategories,
@@ -45,7 +45,6 @@ export default async function HomePage() {
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[var(--color-surface)] text-[var(--color-dark)]">
-      <Leaves />
       <Navbar currentUser={currentUser} cartCount={initialCartCount} />
 
       <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-6">

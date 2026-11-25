@@ -191,7 +191,7 @@ export async function POST(request) {
         for (const group of byStore.values()) {
             const subInsert = await client.query(
                 `INSERT INTO sub_orders (order_id, store_id, subtotal, status)
-                VALUES ($1, $2, $3, 'PROCESSING') RETURNING id`,
+                VALUES ($1, $2, $3, 'PENDING_PAYMENT') RETURNING id`,
                 [orderId, group.storeId, group.subtotal.toFixed(2)]
             );
             const subOrderId = subInsert.rows[0].id;

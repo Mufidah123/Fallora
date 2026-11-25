@@ -24,7 +24,7 @@ export async function POST(request) {
         );
 
         const user = result.rows[0];
-        if (!user || !verifyPassword(password, user.password_hash)) {
+        if (!user || !(await verifyPassword(password, user.password_hash))) {
             return NextResponse.json(
                 { message: "Email/Username atau password salah." },
                 { status: 401 }

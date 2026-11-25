@@ -1,3 +1,5 @@
+-- Langkah 1: jalankan baris CREATE DATABASE ini saja.
+-- Langkah 2: connect ke database db_fallora, lalu jalankan seluruh sisa file ini.
 CREATE DATABASE db_fallora;
 
 -- 1. USERS
@@ -242,6 +244,9 @@ ON sub_orders(status);
 
 CREATE INDEX idx_order_items_sub_order
 ON order_items(sub_order_id);
+
+CREATE INDEX idx_order_items_product
+ON order_items(product_id);
 
 CREATE INDEX idx_reviews_product
 ON reviews(product_id);

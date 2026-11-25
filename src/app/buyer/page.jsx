@@ -53,6 +53,12 @@ export default function BuyerDashboardPage() {
         setTimeout(() => setToast(null), 3500);
     };
 
+    // Navbar menaut ke /buyer?tab=orders atau /buyer?tab=profile
+    useEffect(() => {
+        const tab = new URLSearchParams(window.location.search).get("tab");
+        if (["cart", "orders", "profile"].includes(tab)) setActiveTab(tab);
+    }, []);
+
     const fetchAllData = useCallback(async () => {
         setLoading(true);
         try {

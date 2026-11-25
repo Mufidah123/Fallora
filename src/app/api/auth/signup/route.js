@@ -34,7 +34,7 @@ export async function POST(request) {
         }
 
         const status = requestedRole === "SELLER" ? "PENDING" : "ACTIVE";
-        const passwordHash = hashPassword(password);
+        const passwordHash = await hashPassword(password);
 
         const insertResult = await query(
             `INSERT INTO users (name, username, email, phone, password_hash, role, status)

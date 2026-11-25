@@ -1,5 +1,6 @@
 import { Bree_Serif, Montserrat, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
+import Leaves from "@/components/home/Leaves";
 
 const breeSerif = Bree_Serif({
   weight: "400",
@@ -30,7 +31,10 @@ export default function RootLayout({ children }) {
       lang="id"
       className={`${breeSerif.variable} ${montserrat.variable} ${sourceSans.variable}`}
     >
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <Leaves />
+        {children}
+      </body>
     </html>
   );
 }
