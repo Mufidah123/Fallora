@@ -9,13 +9,6 @@ const SORT_BUTTONS = [
     { key: "bestseller", label: "Terlaris" },
 ];
 
-// Template halaman daftar produk: dipakai oleh halaman kategori, search, dan /products.
-//  - heading      : judul halaman (ReactNode)
-//  - categories   : daftar kategori untuk sidebar
-//  - activeCategoryId / categoryHref(cat) : penanda & tujuan link kategori di sidebar
-//  - basePath + baseParams : URL halaman ini (baseParams = param tetap, mis. { keyword })
-//  - query        : hasil parseCatalogQuery (sort, page, minPrice, maxPrice)
-//  - data         : hasil getCatalogProducts ({ products, total })
 export default function CatalogView({
     heading,
     categories,

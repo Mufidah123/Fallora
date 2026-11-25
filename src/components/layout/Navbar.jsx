@@ -63,11 +63,11 @@ export default function Navbar({ currentUser, cartCount = 0, keyword = "" }) {
                         )}
                         {!currentUser && (
                             <>
-                                <Link href="/seller/dashboard" className="hover:text-[var(--color-cream)]">
+                                <Link href="/login?role=seller" className="hover:text-[var(--color-cream)]">
                                     Seller Centre
                                 </Link>
                                 <span className="text-white/40">|</span>
-                                <Link href="/signup" className="hover:text-[var(--color-cream)]">
+                                <Link href="/signup?role=seller" className="hover:text-[var(--color-cream)]">
                                     Mulai Berjualan
                                 </Link>
                             </>

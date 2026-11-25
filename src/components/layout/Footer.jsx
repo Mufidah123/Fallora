@@ -30,7 +30,7 @@ export default function Footer() {
                     </h4>
                     <ul className="mt-2.5 space-y-1.5 text-[var(--color-muted)]">
                         <li>
-                            <Link href="/signup" className="hover:text-[var(--color-primary)]">
+                            <Link href="/signup?role=seller" className="hover:text-[var(--color-primary)]">
                                 Daftar Sebagai Seller
                             </Link>
                         </li>
