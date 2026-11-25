@@ -31,6 +31,14 @@ export async function POST(request) {
             );
         }
 
+        const expectedRole = String(body.expectedRole || "").toUpperCase();
+        if (expectedRole === "SELLER" && user.role !== "SELLER") {
+            return NextResponse.json(
+                { message: "Akun ini bukan akun Seller. Gunakan login pembeli, atau daftar toko lewat Profil." },
+                { status: 403 }
+            );
+        }
+
         await setSessionCookie(user);
 
         let redirectTo = "/";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import pool from "@/lib/db";
 import { hashPassword, setSessionCookie } from "@/lib/auth";
 
 export async function POST(request) {
@@ -33,26 +33,46 @@ export async function POST(request) {
             );
         }
 
+        const storeName = String(body.store_name || "").trim().slice(0, 150);
+        if (requestedRole === "SELLER" && !storeName) {
+            return NextResponse.json(
+                { message: "Nama toko wajib diisi." },
+                { status: 400 }
+            );
+        }
+
         const status = requestedRole === "SELLER" ? "PENDING" : "ACTIVE";
         const passwordHash = await hashPassword(password);
 
-        const insertResult = await query(
-            `INSERT INTO users (name, username, email, phone, password_hash, role, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, name, username, email, phone, role, status, created_at`,
-            [name, rawUsername, rawEmail, phone, passwordHash, requestedRole, status]
-        );
-
-        const createdUser = insertResult.rows[0];
-
-        // Jika BUYER aktif, otomatis buat row keranjang (carts) kosong
-        if (createdUser.role === "BUYER" && createdUser.status === "ACTIVE") {
-            await query(
-                `INSERT INTO carts (buyer_id)
-            VALUES ($1)
-            ON CONFLICT (buyer_id) DO NOTHING`,
-                [createdUser.id]
+        const client = await pool.connect();
+        let createdUser;
+        try {
+            await client.query("BEGIN");
+            const insertResult = await client.query(
+                `INSERT INTO users (name, username, email, phone, password_hash, role, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, username, email, phone, role, status, created_at`,
+                [name, rawUsername, rawEmail, phone, passwordHash, requestedRole, status]
             );
+            createdUser = insertResult.rows[0];
+
+            if (createdUser.role === "SELLER") {
+                await client.query(
+                    `INSERT INTO stores (seller_id, name) VALUES ($1, $2)`,
+                    [createdUser.id, storeName]
+                );
+            } else {
+                await client.query(
+                    `INSERT INTO carts (buyer_id) VALUES ($1) ON CONFLICT (buyer_id) DO NOTHING`,
+                    [createdUser.id]
+                );
+            }
+            await client.query("COMMIT");
+        } catch (e) {
+            await client.query("ROLLBACK");
+            throw e;
+        } finally {
+            client.release();
         }
 
         await setSessionCookie(createdUser);
