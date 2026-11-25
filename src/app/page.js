@@ -51,7 +51,7 @@ export default async function HomePage() {
         {/* BANNER */}
         <section className="space-y-3">
           <img
-            src="/assets/Autumn_Sale_Banner.png"
+            src="/assets/Autumn_Sale_Banner.jpg"
             alt="Autumn Sale Fallora, diskon hingga 30%"
             className="w-full rounded-xl border border-[#E7E2DC] object-cover shadow-sm"
           />
