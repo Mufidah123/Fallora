@@ -13,7 +13,7 @@ function formatRupiah(val) {
     }).format(Number(val || 0));
 }
 
-export default function ProductDetail({
+export default function ProductDetailClient({
     product,
     images,
     reviews,
@@ -24,7 +24,7 @@ export default function ProductDetail({
     const isBuyer = currentUser?.role === "BUYER";
 
     const [activeImage, setActiveImage] = useState(
-        images[0]?.image_path || "/images/products/product-1.png"
+        images[0]?.image_path || "/images/product-1.jpg"
     );
     const [qty, setQty] = useState(1);
     const [submitting, setSubmitting] = useState(false);

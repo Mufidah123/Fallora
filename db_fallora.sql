@@ -394,17 +394,17 @@ VALUES
         (SELECT id FROM users WHERE username = 'rina_craft'),
         'Rina Craft & Living',
         'Produk fashion harian, tas rajut, aksesori, dan perlengkapan rumah terjangkau.',
-        '/images/stores/rina-craft.png'
+        NULL
     ),
     (
         (SELECT id FROM users WHERE username = 'dimas_loom'),
         'Dimas Goods & Tech',
         'Aksesori elektronik, perlengkapan kerja, gaya hidup, dan kebutuhan harian.',
-        '/images/stores/dimas-goods.png'
+        NULL
     )
 ON CONFLICT (seller_id) DO NOTHING;
 
--- Categories (7 Kategori)
+-- Categories (8 Kategori)
 INSERT INTO categories (name, description)
 VALUES
     ('Fashion & Pakaian', 'Kemeja, kaus, outer, dan pakaian harian nyaman untuk berbagai aktivitas.'),
@@ -753,15 +753,91 @@ VALUES
 
 -- Product Images
 INSERT INTO product_images (product_id, image_path, is_primary)
-SELECT
-    p.id,
-    '/images/products/product-' || p.id || '.png',
-    TRUE
-FROM products p
-WHERE NOT EXISTS (
-    SELECT 1 FROM product_images pi
-    WHERE pi.product_id = p.id AND pi.is_primary = TRUE
-);
+VALUES
+    (1, '/images/product-1.jpg', TRUE),
+    (1, '/images/product-1(2).jpg', FALSE),
+    (1, '/images/product-1(3).jpg', FALSE),
+    (1, '/images/product-1(4).jpg', FALSE),
+    (2, '/images/product-2.jpg', TRUE),
+    (2, '/images/product-2(2).jpg', FALSE),
+    (2, '/images/product-2(3).jpg', FALSE),
+    (3, '/images/product-3.jpg', TRUE),
+    (3, '/images/product-3(2).jpg', FALSE),
+    (3, '/images/product-3(3).jpg', FALSE),
+    (3, '/images/product-3(4).jpg', FALSE),
+    (3, '/images/product-3(5).jpeg', FALSE),
+    (4, '/images/product-4.jpg', TRUE),
+    (5, '/images/product-5.jpg', TRUE),
+    (6, '/images/product-6.jpg', TRUE),
+    (6, '/images/product-6(2).jpg', FALSE),
+    (7, '/images/product-7.jpg', TRUE),
+    (7, '/images/product-7(2).jpg', FALSE),
+    (7, '/images/product-7(3).jpg', FALSE),
+    (7, '/images/product-7(4).jpg', FALSE),
+    (7, '/images/product-7(5).jpg', FALSE),
+    (7, '/images/product-7(6).jpg', FALSE),
+    (8, '/images/product-8.jpg', TRUE),
+    (8, '/images/product-8(2).jpg', FALSE),
+    (9, '/images/product-9.jpg', TRUE),
+    (9, '/images/product-9(2).jpg', FALSE),
+    (9, '/images/product-9(3).jpg', FALSE),
+    (10, '/images/product-10.jpg', TRUE),
+    (10, '/images/product-10(2).jpg', FALSE),
+    (10, '/images/product-10(3).jpg', FALSE),
+    (10, '/images/product-10(4).jpg', FALSE),
+    (11, '/images/product-11.jpg', TRUE),
+    (12, '/images/product-12.jpg', TRUE),
+    (13, '/images/product-13.jpg', TRUE),
+    (14, '/images/product-14.jpg', TRUE),
+    (14, '/images/product-14(2).jpg', FALSE),
+    (15, '/images/product-15.jpg', TRUE),
+    (15, '/images/product-15(2).jpg', FALSE),
+    (15, '/images/product-15(3).jpg', FALSE),
+    (16, '/images/product-16.jpg', TRUE),
+    (17, '/images/product-17.jpg', TRUE),
+    (17, '/images/product-17(2).jpg', FALSE),
+    (18, '/images/product-18.jpg', TRUE),
+    (18, '/images/product-18(2).jpg', FALSE),
+    (18, '/images/product-18(3).jpg', FALSE),
+    (18, '/images/product-18(4).jpg', FALSE),
+    (19, '/images/product-19.jpg', TRUE),
+    (20, '/images/product-20.jpg', TRUE),
+    (20, '/images/product-20(2).jpg', FALSE),
+    (21, '/images/product-21.jpg', TRUE),
+    (21, '/images/product-21(2).jpg', FALSE),
+    (21, '/images/product-21(3).jpg', FALSE),
+    (21, '/images/product-21(4).jpg', FALSE),
+    (21, '/images/product-21(5).jpg', FALSE),
+    (22, '/images/product-22.jpg', TRUE),
+    (22, '/images/product-22(2).jpg', FALSE),
+    (23, '/images/product-23.jpeg', TRUE),
+    (24, '/images/product-24.png', TRUE),
+    (25, '/images/product-25.jpeg', TRUE),
+    (25, '/images/product-25(2).jpg', FALSE),
+    (25, '/images/product-25(3).jpg', FALSE),
+    (25, '/images/product-25(4).jpg', FALSE),
+    (26, '/images/product-26.jpg', TRUE),
+    (27, '/images/product-27.jpg', TRUE),
+    (27, '/images/product-27(2).jpg', FALSE),
+    (27, '/images/product-27(3).jpg', FALSE),
+    (28, '/images/product-28.jpg', TRUE),
+    (28, '/images/product-28(2).jpg', FALSE),
+    (29, '/images/product-29.jpeg', TRUE),
+    (29, '/images/product-29(2).jpg', FALSE),
+    (29, '/images/product-29(3).jpg', FALSE),
+    (30, '/images/product-30.jpg', TRUE),
+    (30, '/images/product-30(2).jpg', FALSE),
+    (30, '/images/product-30(3).jpg', FALSE),
+    (31, '/images/product-31.jpg', TRUE),
+    (32, '/images/product-32.jpg', TRUE),
+    (32, '/images/product-32(2).jpg', FALSE),
+    (32, '/images/product-32(3).jpg', FALSE),
+    (32, '/images/product-32(4).jpg', FALSE),
+    (33, '/images/product-33.jpg', TRUE),
+    (33, '/images/product-33(2).jpg', FALSE),
+    (34, '/images/product-34.jpg', TRUE),
+    (35, '/images/product-35.jpg', TRUE),
+    (35, '/images/product-35(2).jpg', FALSE);
 
 -- Carts Awal untuk Buyer ACTIVE
 INSERT INTO carts (buyer_id)
@@ -785,7 +861,7 @@ WITH inserted_order AS (
     VALUES (
         (SELECT id FROM users WHERE username = 'siti_rahma'),
         'ORD-FALLORA-1001',
-        318000.00,
+        315000.00,
         'Siti Rahma',
         '081234560007',
         'Jl. A. P. Pettarani No. 45',
@@ -800,7 +876,7 @@ sub_rina AS (
     SELECT
         id,
         (SELECT id FROM stores WHERE name = 'Rina Craft & Living'),
-        124000.00,
+        125000.00,
         'COMPLETED'
     FROM inserted_order
     RETURNING id
@@ -810,7 +886,7 @@ sub_dimas AS (
     SELECT
         id,
         (SELECT id FROM stores WHERE name = 'Dimas Goods & Tech'),
-        194000.00,
+        190000.00,
         'COMPLETED'
     FROM inserted_order
     RETURNING id
